@@ -3,6 +3,7 @@ import 'package:password_cli/accounts.dart';
 import 'package:tabler/tabler.dart';
 import 'package:password_cli/google_api.dart';
 import 'package:logging/logging.dart';
+import 'package:csv/csv.dart';
 import 'dart:io';
 
 final log = Logger('command');
@@ -554,7 +555,7 @@ class ListCommand extends BaseCommand {
       """Lists entries from your account file based on filter like email or tags
 ---------
 
-  You provide a search or argument like email 'search -e some@email.com' and this
+  You provide a search or argument like email 'list -e some@email.com' and this
   will print out all accounts associated with that email.  All entries will be listed
   with no arguement provided.
 
@@ -581,6 +582,86 @@ class ListCommand extends BaseCommand {
       List<AccountItem>? items = accounts?.accounts;
       printAccountItems(items);
     }
+  }
+}
+
+class CsvCommand extends BaseCommand {
+  Accounts? accounts;
+  CsvCommand(this.accounts) : super(accounts);
+
+  @override
+  final name = 'csv';
+
+  @override
+  final description = """Dumps all or filtered account entries in CSV format
+---------
+
+  You provide a search or argument like email 'csv -e some@email.com' and this
+  will print out all accounts associated with that email in CSV format. All entries
+  will be listed with no arguement provided.
+
+  """;
+
+  @override
+  void run() {
+    var args = argResults?.arguments;
+    log.info("running list command with args $args");
+    if (containsArgument(args, "user", "-u")) {
+      var username = getArgumentValue(args, "user", "-u");
+      List<AccountItem>? items = accounts?.getFilteredListByUsername(username);
+      printAsCsv(items);
+    } else if (containsArgument(args, "email", "-e")) {
+      var email = getArgumentValue(args, "email", "-e");
+      List<AccountItem>? items = accounts?.getFilteredListByEmail(email);
+      printAsCsv(items);
+    } else if (containsArgument(args, "tags", "-t")) {
+      List<String> tags =
+          getArgumentValue(args, "tags", "-t").toLowerCase().split(",");
+      List<AccountItem>? items = accounts?.getFilteredListByTags(tags);
+      printAsCsv(items);
+    } else {
+      List<AccountItem>? items = accounts?.accounts;
+      printAsCsv(items);
+    }
+  }
+
+  void printAsCsv(List<AccountItem>? items) {
+    //print("Found ${items?.length} account(s)");
+    var header = [
+      'Account',
+      'User',
+      'Hint',
+      'Email',
+      'Acct Number',
+      'Notes',
+      'Tags'
+    ];
+    List<List<dynamic>> data = [];
+    data.add(header);
+    for (AccountItem? item in items!) {
+      List<String> rowData = [];
+      var name = (item == null || item.name.isEmpty) ? "" : item.name;
+      rowData.add(name);
+      var username =
+          (item == null || item.username.isEmpty) ? "" : item.username;
+      rowData.add(username);
+      var hint = (item == null || item.hint.isEmpty) ? "" : item.hint;
+      rowData.add(hint);
+      var email = (item == null || item.email.isEmpty) ? "" : item.email;
+      rowData.add(email);
+      var accountNumber = (item == null || item.accountNumber.isEmpty)
+          ? ""
+          : item.accountNumber;
+      rowData.add(accountNumber);
+      var notes = (item == null || item.notes.isEmpty) ? "" : item.notes;
+      rowData.add(wrapText(notes, 25));
+      List<String> tags = (item == null || item.tags.isEmpty) ? [] : item.tags;
+      String tagString = tags.join(', ');
+      rowData.add(tagString);
+      data.add(rowData);
+    }
+    String csv = const ListToCsvConverter().convert(data);
+    print(csv);
   }
 }
 

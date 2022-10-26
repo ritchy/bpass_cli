@@ -14,6 +14,7 @@ const email = "email";
 const tags = "tags";
 const url = "url";
 const notes = "notes";
+const csv = "csv";
 
 /***
  * 
@@ -38,6 +39,7 @@ Command Line Account Manager
   runner.addCommand(PasswordCommand(accounts));
   runner.addCommand(HintCommand(accounts));
   runner.addCommand(GoogleSyncCommand(accounts, getAppDirPath()));
+  runner.addCommand(CsvCommand(accounts));
   runner.argParser.addOption(password, abbr: "p", help: "account password");
   runner.argParser.addOption(userName, abbr: "u", help: "user name");
   runner.argParser.addOption(email, abbr: "e", help: "account email");
@@ -45,6 +47,7 @@ Command Line Account Manager
   runner.argParser.addOption(accountNumber, abbr: "a", help: "account number");
   runner.argParser.addOption(notes, abbr: "n", help: "account notes");
   runner.argParser.addOption(url, help: "account url");
+  runner.argParser.addOption(csv, help: "results in csv output of accounts");
   runner.argParser.addOption(tags,
       abbr: "t",
       help:
