@@ -35,8 +35,8 @@ class GoogleService {
 
   var scopes = ['email', 'https://www.googleapis.com/auth/drive.file'];
   final _clientId = ClientId(
-      '240721822501-4g0qvd039md5dncd8pdosk9co59d84h0.apps.googleusercontent.com',
-      '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');
+      '<key>.apps.googleusercontent.com',
+      '<secret>');
 
   void autoGoogleLogin() async {
     //processingGoogleFile = true;
