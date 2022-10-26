@@ -15,6 +15,9 @@ const tags = "tags";
 const url = "url";
 const notes = "notes";
 
+/***
+ * 
+ */
 void main(List<String> arguments) async {
   final log = Logger('password_cli');
   await initLogger();
