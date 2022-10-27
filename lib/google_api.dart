@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:_discoveryapis_commons/_discoveryapis_commons.dart' as commons;
 import 'encryption_handler.dart';
+import 'client.dart';
 
 //import 'package:password_manager/platform_details.dart';
 
@@ -34,9 +35,7 @@ class GoogleService {
   }
 
   var scopes = ['email', 'https://www.googleapis.com/auth/drive.file'];
-  final _clientId = ClientId(
-      '<key>.apps.googleusercontent.com',
-      '<secret>');
+  final _clientId = ClientId(CLIENT_IDENTIFIER, CLIENT_SECRET);
 
   void autoGoogleLogin() async {
     //processingGoogleFile = true;
