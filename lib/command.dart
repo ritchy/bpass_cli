@@ -106,8 +106,7 @@ before any delete.
         updateProvided = true;
       }
       if (containsArgument(args, "tags", "-t")) {
-        var tags =
-            getArgumentValue(args, "tags", "-t").toLowerCase().split(", ");
+        var tags = getTagsArgumentValue(args, "tags", "-t");
         account.tags = tags;
         updateProvided = true;
       }
@@ -574,8 +573,8 @@ class ListCommand extends BaseCommand {
       List<AccountItem>? items = accounts?.getFilteredListByEmail(email);
       printAccountItems(items);
     } else if (containsArgument(args, "tags", "-t")) {
-      List<String> tags =
-          getArgumentValue(args, "tags", "-t").toLowerCase().split(",");
+      List<String> tags = getTagsArgumentValue(args, "tags", "-t");
+      //getArgumentValue(args, "tags", "-t").toLowerCase().split(",");
       List<AccountItem>? items = accounts?.getFilteredListByTags(tags);
       printAccountItems(items);
     } else {
@@ -615,8 +614,9 @@ class CsvCommand extends BaseCommand {
       List<AccountItem>? items = accounts?.getFilteredListByEmail(email);
       printAsCsv(items);
     } else if (containsArgument(args, "tags", "-t")) {
-      List<String> tags =
-          getArgumentValue(args, "tags", "-t").toLowerCase().split(",");
+      List<String> tags = getTagsArgumentValue(args, "tags", "-t");
+      //List<String> tags =
+      //    getArgumentValue(args, "tags", "-t").toLowerCase().split(",");
       List<AccountItem>? items = accounts?.getFilteredListByTags(tags);
       printAsCsv(items);
     } else {
@@ -682,24 +682,24 @@ abstract class BaseCommand extends Command {
     List<String> tags = [];
 
     //print(args);
-    if (containsArgument(args, "user", "-u")) {
+    if (containsArgument(args, "--user", "-u")) {
       username = getArgumentValue(args, "user", "-u");
       //print("got user $username");
     }
-    if (containsArgument(args, "email", "-e")) {
+    if (containsArgument(args, "--email", "-e")) {
       email = getArgumentValue(args, "email", "-e");
     }
-    if (containsArgument(args, "pass", "-p")) {
+    if (containsArgument(args, "--pass", "-p")) {
       password = getArgumentValue(args, "pass", "-p");
     }
-    if (containsArgument(args, "account", "-a")) {
+    if (containsArgument(args, "--account", "-a")) {
       accountNumber = getArgumentValue(args, "account", "-a");
     }
     if (containsArgument(args, "--hint", "-H")) {
       hint = getArgumentValue(args, "--hint", "-H");
     }
-    if (containsArgument(args, "tags", "-t")) {
-      tags = getArgumentValue(args, "tags", "-t").toLowerCase().split(", ");
+    if (containsArgument(args, "--tags", "-t")) {
+      tags = getTagsArgumentValue(args, "tags", "-t");
     }
     if (containsArgument(args, "--notes", "-n")) {
       notes = getArgumentValue(args, "--notes", "-n");
@@ -728,11 +728,77 @@ abstract class BaseCommand extends Command {
     } else {
       for (int i = 0; i < args.length; ++i) {
         if ((args[i] == full) || (args[i] == abbr)) {
-          return args[i + 1];
+          return args[i + 1].trim();
         }
       }
     }
     return "";
+  }
+
+  List<String> getTagsArgumentValue(
+      List<String>? args, String full, String abbr) {
+    //print("get tags");
+    List<String> toReturn = [];
+    if (args == null || args.length < 2) {
+      return toReturn;
+    } else {
+      for (int i = 0; i < args.length; ++i) {
+        if ((args[i] == full) || (args[i] == abbr)) {
+          //print("returning '${findAllTags(args, i + 1)}'");
+          String toSplit = findAllTags(args, i + 1);
+          List<String> toProcess = toSplit.toLowerCase().split(",");
+          for (int i = 0; i < toProcess.length; ++i) {
+            //print(
+            //    "trimming each one $i: '${toProcess[i]}' = '${toProcess[i].trim()}'");
+            toProcess[i] = toProcess[i].trim();
+          }
+          toReturn = toProcess;
+        }
+      }
+    }
+    return toReturn;
+  }
+
+  String findAllTags(List<String> args, int startingIndex) {
+    if (startingIndex >= args.length) {
+      return "";
+    }
+    String tags = "";
+    for (int i = startingIndex; i < args.length; ++i) {
+      if (isNotArgument(args[i])) {
+        String tag = args[i].trim();
+        //print("adding '$tag'");
+        tags = tags + tag;
+      } else {
+        break;
+      }
+    }
+    return tags;
+  }
+
+  bool isNotArgument(String arg) {
+    bool notArgument = true;
+    if ([
+      "-u",
+      "--user",
+      "-e",
+      "--email",
+      "-p",
+      "--pass",
+      "-a",
+      "--account",
+      "-h",
+      "-H",
+      "--hint",
+      "-t",
+      "--tags",
+      "-n",
+      "--notes",
+      "--url"
+    ].any((item) => arg == item)) {
+      notArgument = false;
+    }
+    return notArgument;
   }
 
   bool returnsSingleAccount(String toSearch) {
