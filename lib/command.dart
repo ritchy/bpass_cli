@@ -5,6 +5,7 @@ import 'package:password_cli/google_api.dart';
 import 'package:logging/logging.dart';
 import 'package:csv/csv.dart';
 import 'dart:io';
+import 'console.dart';
 
 final log = Logger('command');
 
@@ -26,7 +27,7 @@ Example:
 
   @override
   void run() async {
-    print("Adding account entry");
+    Console.normal("Adding account entry");
     log.info("REST: ${argResults?.rest}");
     String? accountName = argResults?.rest[0];
     if (accountName == null) {
@@ -37,8 +38,8 @@ Example:
       accounts?.addAccount(getAccountItem(accountName, argResults?.arguments));
       await accounts?.updateAccountFiles(null);
     } else {
-      print("Account with the name $accountName already exist!");
-      //print(existingAccount);
+      Console.normal("Account with the name $accountName already exist!");
+      //Console.normal(existingAccount);
     }
   }
 }
@@ -72,10 +73,10 @@ before any delete.
       List<AccountItem>? items =
           accounts?.getFilteredListByAccountName(toSearch);
       if (items == null) {
-        print(
+        Console.normal(
             "Unable to find account by searching for $toSearch, try new search phrase.");
       } else if (items.length > 1) {
-        print(
+        Console.normal(
             "Multiple matches coming back when searching $toSearch, try to narrow with new search.");
         printAccountItems(items);
       } else {
@@ -84,7 +85,7 @@ before any delete.
     }
     if (account != null) {
       bool updateProvided = false;
-      print("updating account $account");
+      Console.normal("updating account $account");
       if (containsArgument(args, "user", "-u")) {
         var username = getArgumentValue(args, "user", "-u");
         account.username = username;
@@ -119,7 +120,7 @@ before any delete.
         var url = getArgumentValue(args, "--url", "----");
         account.url = url;
         updateProvided = true;
-        print("got url $url");
+        Console.normal("got url $url");
       }
 
       if (updateProvided) {
@@ -134,7 +135,7 @@ before any delete.
         //accounts?.saveUpdates();
 
       } else {
-        print("Need to provide something to update!\n\nSee Usage:\n");
+        Console.normal("Need to provide something to update!\n\nSee Usage:\n");
         throw Exception();
       }
     }
@@ -161,7 +162,7 @@ Are you sure you want to delete MyBank? y/n > y
 
   @override
   void run() async {
-    //print("Deleting account entry");
+    //Console.normal("Deleting account entry");
     var args = argResults?.arguments;
     String? toSearch = argResults?.rest[0];
     if (toSearch == null) {
@@ -173,10 +174,10 @@ Are you sure you want to delete MyBank? y/n > y
       List<AccountItem>? items =
           accounts?.getFilteredListByAccountName(toSearch);
       if ((items == null) || (items.isEmpty)) {
-        stdout.writeln(
+        Console.normal(
             "Unable to find account by searching for $toSearch, try new search phrase.");
       } else if (items.length > 1) {
-        stdout.writeln(
+        Console.normal(
             "Multiple matches coming back when searching $toSearch, try to narrow with new search.");
         printAccountItems(items);
       } else {
@@ -190,15 +191,15 @@ Are you sure you want to delete MyBank? y/n > y
       stdin.lineMode = false;
       final byte = stdin.readByteSync();
       String input = String.fromCharCode(byte);
-      stdout.writeln("");
+      Console.normal("");
       if (input != null &&
           !input.isEmpty &&
           input.toLowerCase().startsWith("y")) {
-        stdout.writeln("Deleting $toSearch ...");
+        Console.normal("Deleting $toSearch ...");
         accounts?.markAccountAsDeleted(account);
         await accounts?.updateAccountFiles(null);
       } else {
-        print("Not Deleting..");
+        Console.normal("Not Deleting..");
       }
     }
   }
@@ -228,13 +229,13 @@ Google Drive for automatic syncing with other devices.
   @override
   void run() async {
     try {
-      print("Syncing with Google Drive ...");
+      Console.normal("Syncing with Google Drive ...");
       googleService = GoogleService(appDirPath);
       await googleService?.handleGoogleDriveLogin(CommandLineGooglePrompt());
       //print ("logged in, now reconcile file from drive");
       await reconcileGoogleAccountFile();
     } catch (e, stacktrace) {
-      print("Something went wrong $e $stacktrace");
+      Console.normal("Something went wrong $e $stacktrace");
     }
     //exit(0);
   }
@@ -243,7 +244,7 @@ Google Drive for automatic syncing with other devices.
     //check to see if the accounts file exist
     bool? fileExistsInDrive = await googleService?.accountsFileExistInDrive();
     if (fileExistsInDrive == null) {
-      print("There was a problem with the google service");
+      Console.normal("There was a problem with the google service");
     } else if (fileExistsInDrive) {
       String? key = googleService?.googleSettings.keyAsBase64;
       if (key != null && key.isNotEmpty) {
@@ -252,55 +253,56 @@ Google Drive for automatic syncing with other devices.
         File? toReconcile = await googleService?.downloadAccountFile();
         //print ("downloaded file ${toReconcile.path}, now reconciling ...");
         if (accounts == null) {
-          print("Have not loaded accounts locally, unable to perform sync");
+          Console.normal(
+              "Have not loaded accounts locally, unable to perform sync");
         } else {
           await accounts?.reconcileAccountsFromFile(
               toReconcile!, googleService!);
-          print("Checking for access requests ...");
+          Console.normal("Checking for access requests ...");
           await refreshAccessRequestList();
-          print("Completed sync");
+          Console.normal("Completed sync");
         }
       } else {
         //looks like we need to make a request for access
         //let's make sure we haven't already done that
         ClientAccess? outstandingRequest =
             await googleService?.findExistingRequest();
-        //print("outstanding request $outstandingRequest");
+        //Console.normal("outstanding request $outstandingRequest");
         //outstandingRequest ??= null;
         if (outstandingRequest != null) {
           if (outstandingRequest.accessStatus == ClientAccess.REQUESTED) {
-            stdout.writeln(
+            Console.normal(
                 "You have an outstanding request for access to existing accounts in Drive, run sync again when request has been granted.");
           } else if (outstandingRequest.accessStatus == ClientAccess.DENIED) {
-            stdout.writeln(
+            Console.normal(
                 "You sent a request that was denied run sync again if you want to send another request");
             await googleService?.removeOutstandingRequests();
             await googleService?.updateClientAccessRequests();
           } else if (outstandingRequest.accessStatus == ClientAccess.GRANTED) {
-            stdout.writeln("Request granted .. ");
+            Console.normal("Request granted .. ");
             final encryptedKey = outstandingRequest.encryptedAccessKey;
             if (encryptedKey != null) {
-              //print("decrypting key...");
+              //Console.normal("decrypting key...");
               await googleService?.decryptAndSaveKey(encryptedKey);
             } else {
-              print("no key??");
+              Console.normal("no key??");
             }
           }
         } else {
-          stdout.writeln("-------> Request Access?");
+          Console.normal("-------> Request Access?");
           stdout.write(
               "This appears to be your first sync and there's an existing file in Google Drive, would you like to request access? y/n > ");
           stdin.lineMode = false;
           final byte = stdin.readByteSync();
           String input = String.fromCharCode(byte);
-          stdout.writeln("");
+          Console.normal("");
           if (input.isNotEmpty && input.toLowerCase().startsWith("y")) {
             await googleService?.generateNewClientAccessRequest();
             await googleService?.updateClientAccessRequests();
-            stdout.writeln(
+            Console.normal(
                 "sent access request, run sync again when request has been granted ...");
           } else {
-            print("Not syncing ..");
+            Console.normal("Not syncing ..");
           }
         }
       }
@@ -311,7 +313,7 @@ Google Drive for automatic syncing with other devices.
         //looks like we already set up encryption key, so just synd
         accounts?.updateAccountFiles(googleService);
       } else {
-        print(
+        Console.normal(
             "This appears to be your first sync, generating encryption keys ...");
       }
     }
@@ -326,10 +328,10 @@ Google Drive for automatic syncing with other devices.
     } else {
       String? clientId = accessRequest.clientId;
       if (clientId != null) {
-        stdout.writeln("granting access to $clientId ...");
+        Console.normal("granting access to $clientId ...");
         await gs.grantAccessRequest(clientId);
       } else {
-        stdout.writeln(
+        Console.normal(
             "This access request isn't valid, missing required client id, removing");
         await gs.removeAccessRequest(accessRequest);
       }
@@ -339,7 +341,7 @@ Google Drive for automatic syncing with other devices.
   Future<void> denyAccessRequest(ClientAccess accessRequest) async {
     final GoogleService? gs = googleService;
     if (gs == null || !gs.loggedIn) {
-      stdout.writeln(
+      Console.normal(
           "Trying to sync deny response with Drive file, but not logged in");
     } else {
       accessRequest.accessStatus = ClientAccess.DENIED;
@@ -350,7 +352,7 @@ Google Drive for automatic syncing with other devices.
   Future<void> updateOutstandingRequest(ClientAccess accessRequest) async {
     if (googleService != null) {
       if (googleService!.loggedIn) {
-        stdout.writeln("Trying to sync with Drive file, but not logged in");
+        Console.normal("Trying to sync with Drive file, but not logged in");
       } else {
         await googleService?.updateClientRequest(accessRequest);
       }
@@ -377,12 +379,12 @@ Google Drive for automatic syncing with other devices.
         stdin.lineMode = false;
         final byte = stdin.readByteSync();
         String input = String.fromCharCode(byte);
-        stdout.writeln("");
+        Console.normal("");
         if (input.isNotEmpty && input.toLowerCase().startsWith("y")) {
-          stdout.writeln("Granting access ...");
+          Console.normal("Granting access ...");
           await grantAccessRequest(ca);
         } else {
-          stdout.writeln("Denying access..");
+          Console.normal("Denying access..");
           await denyAccessRequest(ca);
         }
       }
@@ -395,7 +397,7 @@ Google Drive for automatic syncing with other devices.
       log.warning("Trying to sync with Drive file, but not logged in");
     } else {
       if (!await gs.clientAccessFileExistInDrive()) {
-        stdout.writeln("Access file does not exist in drive, creating ...");
+        Console.normal("Access file does not exist in drive, creating ...");
         await gs.generateNewClientAccessFile();
       }
       return await gs.loadClientAccessRequests();
@@ -408,10 +410,10 @@ class CommandLineGooglePrompt extends PromptHandler {
   @override
   void handlePrompt(String url) async {
     //canLaunchUrl().then((bool result) {});
-    print("Here's the URL to grant access:");
-    print('  => $url');
+    Console.normal("Here's the URL to grant access:");
+    Console.normal('  => $url');
     var result = await Process.run('open', [url]);
-    print('');
+    Console.normal('');
   }
 }
 
@@ -432,7 +434,7 @@ class SearchCommand extends BaseCommand {
 
   @override
   void run() {
-    print("Searching ${argResults?.rest[0]} ...");
+    Console.normal("Searching ${argResults?.rest[0]} ...");
     //print ("rest ${argResults?.rest}");
     String? toSearch = argResults?.rest[0];
     if (toSearch == null) {
@@ -465,7 +467,7 @@ the provided account name.
 
   @override
   void run() {
-    print("Searching ${argResults?.rest[0]} ...");
+    Console.normal("Searching ${argResults?.rest[0]} ...");
     //print ("rest ${argResults?.rest}");
     String? toSearch = argResults?.rest[0];
     if (toSearch == null) {
@@ -477,14 +479,14 @@ the provided account name.
           account.password.isEmpty ? "<empty password>" : account.password;
       var hintText =
           account.hint.isEmpty ? "-hint <empty hint>" : "-hint ${account.hint}";
-      stdout.writeln("$passText $hintText");
+      Console.normal("$passText $hintText");
     } else {
       List<AccountItem>? items =
           accounts?.getFilteredListByAccountName(toSearch);
       if (items == null || items.isEmpty) {
-        print("No account found matching $toSearch");
+        Console.normal("No account found matching $toSearch");
       } else if (items.length > 1) {
-        print(
+        Console.normal(
             "==========>> multiple accounts matching $toSearch, which one?  <<============");
         printAccountItems(items);
       } else {
@@ -492,7 +494,7 @@ the provided account name.
             items[0].password.isEmpty ? "<empty password>" : items[0].password;
         var hintText =
             items[0].hint.isEmpty ? "<empty hint>" : "-hint ${items[0].hint}";
-        stdout.writeln("$passText $hintText");
+        Console.normal("$passText $hintText");
       }
     }
   }
@@ -518,25 +520,25 @@ listing of search results that include the hint.
 
   @override
   void run() {
-    print("Searching ${argResults?.rest[0]} ...");
+    Console.normal("Searching ${argResults?.rest[0]} ...");
     String? toSearch = argResults?.rest[0];
     if (toSearch == null) {
       toSearch = "";
     }
     AccountItem? account = accounts?.findAccountItemByName(toSearch);
     if (account != null) {
-      print(account.hint.isEmpty ? "<empty hint>" : account.hint);
+      Console.normal(account.hint.isEmpty ? "<empty hint>" : account.hint);
     } else {
       List<AccountItem>? items =
           accounts?.getFilteredListByAccountName(toSearch);
       if (items == null || items.isEmpty) {
-        print("No account found matching $toSearch");
+        Console.normal("No account found matching $toSearch");
       } else if (items.length > 1) {
-        print(
+        Console.normal(
             "==========>> multiple accounts matching $toSearch, which one?  <<============");
         printAccountItems(items);
       } else {
-        print(items[0].hint.isEmpty ? "<empty hint>" : items[0].hint);
+        Console.normal(items[0].hint.isEmpty ? "<empty hint>" : items[0].hint);
       }
     }
   }
@@ -626,7 +628,7 @@ class CsvCommand extends BaseCommand {
   }
 
   void printAsCsv(List<AccountItem>? items) {
-    //print("Found ${items?.length} account(s)");
+    //Console.normal("Found ${items?.length} account(s)");
     var header = [
       'Account',
       'User',
@@ -661,7 +663,7 @@ class CsvCommand extends BaseCommand {
       data.add(rowData);
     }
     String csv = const ListToCsvConverter().convert(data);
-    print(csv);
+    Console.normal(csv);
   }
 }
 
@@ -681,10 +683,10 @@ abstract class BaseCommand extends Command {
     String notes = "";
     List<String> tags = [];
 
-    //print(args);
+    //Console.normal(args);
     if (containsArgument(args, "--user", "-u")) {
       username = getArgumentValue(args, "user", "-u");
-      //print("got user $username");
+      //Console.normal("got user $username");
     }
     if (containsArgument(args, "--email", "-e")) {
       email = getArgumentValue(args, "email", "-e");
@@ -706,7 +708,7 @@ abstract class BaseCommand extends Command {
     }
     if (containsArgument(args, "--url", "----")) {
       url = getArgumentValue(args, "--url", "----");
-      //print("got url $url");
+      //Console.normal("got url $url");
     }
     DateTime lastUpdated = DateTime.now();
     return AccountItem(name, id, username, password, hint, email, accountNumber,
@@ -737,18 +739,18 @@ abstract class BaseCommand extends Command {
 
   List<String> getTagsArgumentValue(
       List<String>? args, String full, String abbr) {
-    //print("get tags");
+    //Console.normal("get tags");
     List<String> toReturn = [];
     if (args == null || args.length < 2) {
       return toReturn;
     } else {
       for (int i = 0; i < args.length; ++i) {
         if ((args[i] == full) || (args[i] == abbr)) {
-          //print("returning '${findAllTags(args, i + 1)}'");
+          //Console.normal("returning '${findAllTags(args, i + 1)}'");
           String toSplit = findAllTags(args, i + 1);
           List<String> toProcess = toSplit.toLowerCase().split(",");
           for (int i = 0; i < toProcess.length; ++i) {
-            //print(
+            //Console.normal(
             //    "trimming each one $i: '${toProcess[i]}' = '${toProcess[i].trim()}'");
             toProcess[i] = toProcess[i].trim();
           }
@@ -767,7 +769,7 @@ abstract class BaseCommand extends Command {
     for (int i = startingIndex; i < args.length; ++i) {
       if (isNotArgument(args[i])) {
         String tag = args[i].trim();
-        //print("adding '$tag'");
+        //Console.normal("adding '$tag'");
         tags = tags + tag;
       } else {
         break;
@@ -837,7 +839,7 @@ abstract class BaseCommand extends Command {
   }
 
   void printAccountItems(List<AccountItem>? items) {
-    print("Found ${items?.length} account(s)");
+    Console.normal("Found ${items?.length} account(s)");
     List<List<dynamic>> data = [];
     int i = 1;
     for (AccountItem? item in items!) {
@@ -912,7 +914,7 @@ abstract class BaseCommand extends Command {
     //var data = [
     //  ['1', '2', '3']
     //];
-    var t2 = Tabler(
+    var toPrint = Tabler(
       data: data,
       header: header,
       style: TablerStyle(
@@ -923,6 +925,6 @@ abstract class BaseCommand extends Command {
         align: TableTextAlign.right,
       ),
     );
-    print(t2);
+    print(toPrint);
   }
 }
