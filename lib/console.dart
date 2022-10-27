@@ -34,6 +34,19 @@ class Console {
       stdout.write(message);
     }
   }
+
+  static bool prompt(String message) {
+    stdout.write(message);
+    stdin.lineMode = false;
+    final byte = stdin.readByteSync();
+    String input = String.fromCharCode(byte);
+    stdout.writeln();
+    if (input.isNotEmpty && input.toLowerCase().startsWith("y")) {
+      return true;
+    } else {
+      return false;
+    }
+  }
 }
 
 class ConsoleLevel implements Comparable<ConsoleLevel> {

@@ -163,10 +163,9 @@ Are you sure you want to delete MyBank? y/n > y
   @override
   void run() async {
     //Console.normal("Deleting account entry");
-    var args = argResults?.arguments;
     String? toSearch = argResults?.rest[0];
     if (toSearch == null) {
-      throw new Exception();
+      throw Exception();
     }
     AccountItem? account = getSingleAccount(toSearch);
     if (account == null) {
@@ -187,14 +186,9 @@ Are you sure you want to delete MyBank? y/n > y
     if (account != null) {
       //print ("found $account");
       printAccountItems([account]);
-      stdout.write('Are you sure you want to delete ${account.name}? y/n > ');
-      stdin.lineMode = false;
-      final byte = stdin.readByteSync();
-      String input = String.fromCharCode(byte);
-      Console.normal("");
-      if (input != null &&
-          !input.isEmpty &&
-          input.toLowerCase().startsWith("y")) {
+      bool answeredYes = Console.prompt(
+          "Are you sure you want to delete ${account.name}? y/n > ");
+      if (answeredYes) {
         Console.normal("Deleting $toSearch ...");
         accounts?.markAccountAsDeleted(account);
         await accounts?.updateAccountFiles(null);
