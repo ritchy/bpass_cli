@@ -14,7 +14,7 @@ const email = "email";
 const tags = "tags";
 const url = "url";
 const notes = "notes";
-const csv = "csv";
+const verbose = "verbose";
 
 /***
  * 
@@ -47,7 +47,7 @@ Command Line Account Manager
   runner.argParser.addOption(accountNumber, abbr: "a", help: "account number");
   runner.argParser.addOption(notes, abbr: "n", help: "account notes");
   runner.argParser.addOption(url, help: "account url");
-  runner.argParser.addOption(csv, help: "results in csv output of accounts");
+  runner.argParser.addFlag(verbose, abbr: "v", help: "verbose output");
   runner.argParser.addOption(tags,
       abbr: "t",
       help:
@@ -103,7 +103,7 @@ Future<void> initLogger() async {
   if (!logFile.existsSync()) {
     logFile.createSync();
   }
-  Logger.root.level = Level.WARNING;
+  Logger.root.level = Level.INFO;
   //Level.ALL; // defaults to Level.INFO
   Logger.root.onRecord.listen((record) async {
     stdout.writeln('${record.level.name}: ${record.time}: ${record.message}');

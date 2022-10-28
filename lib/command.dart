@@ -86,17 +86,17 @@ before any delete.
     if (account != null) {
       bool updateProvided = false;
       Console.normal("updating account $account");
-      if (containsArgument(args, "user", "-u")) {
+      if (containsArgument(args, "--user", "-u")) {
         var username = getArgumentValue(args, "user", "-u");
         account.username = username;
         updateProvided = true;
       }
-      if (containsArgument(args, "email", "-e")) {
+      if (containsArgument(args, "--email", "-e")) {
         var email = getArgumentValue(args, "email", "-e");
         account.email = email;
         updateProvided = true;
       }
-      if (containsArgument(args, "pass", "-p")) {
+      if (containsArgument(args, "--pass", "-p")) {
         var password = getArgumentValue(args, "pass", "-p");
         account.password = password;
         updateProvided = true;
@@ -106,7 +106,7 @@ before any delete.
         account.hint = hint;
         updateProvided = true;
       }
-      if (containsArgument(args, "tags", "-t")) {
+      if (containsArgument(args, "--tags", "-t")) {
         var tags = getTagsArgumentValue(args, "tags", "-t");
         account.tags = tags;
         updateProvided = true;
@@ -552,24 +552,34 @@ class ListCommand extends BaseCommand {
 
   @override
   void run() {
-    var args = argResults?.arguments;
-    log.info("running list command with args $args");
-    if (containsArgument(args, "user", "-u")) {
-      var username = getArgumentValue(args, "user", "-u");
-      List<AccountItem>? items = accounts?.getFilteredListByUsername(username);
-      printAccountItems(items);
-    } else if (containsArgument(args, "email", "-e")) {
-      var email = getArgumentValue(args, "email", "-e");
-      List<AccountItem>? items = accounts?.getFilteredListByEmail(email);
-      printAccountItems(items);
-    } else if (containsArgument(args, "tags", "-t")) {
-      List<String> tags = getTagsArgumentValue(args, "tags", "-t");
-      //getArgumentValue(args, "tags", "-t").toLowerCase().split(",");
-      List<AccountItem>? items = accounts?.getFilteredListByTags(tags);
-      printAccountItems(items);
-    } else {
-      List<AccountItem>? items = accounts?.accounts;
-      printAccountItems(items);
+    try {
+      var args = argResults?.arguments;
+      bool verbose = false;
+      log.info("running list command with args $args");
+      if (containsArgument(args, "--verbose", "-v")) {
+        print("got verbose");
+        verbose = true;
+      }
+      if (containsArgument(args, "--user", "-u")) {
+        var username = getArgumentValue(args, "--user", "-u");
+        List<AccountItem>? items =
+            accounts?.getFilteredListByUsername(username);
+        printAccountItems(items, verbose: verbose);
+      } else if (containsArgument(args, "--email", "-e")) {
+        var email = getArgumentValue(args, "--email", "-e");
+        List<AccountItem>? items = accounts?.getFilteredListByEmail(email);
+        printAccountItems(items, verbose: verbose);
+      } else if (containsArgument(args, "--tags", "-t")) {
+        List<String> tags = getTagsArgumentValue(args, "--tags", "-t");
+        //getArgumentValue(args, "tags", "-t").toLowerCase().split(",");
+        List<AccountItem>? items = accounts?.getFilteredListByTags(tags);
+        printAccountItems(items, verbose: verbose);
+      } else {
+        List<AccountItem>? items = accounts?.accounts;
+        printAccountItems(items, verbose: verbose);
+      }
+    } catch (e) {
+      log.severe("exception happned $e");
     }
   }
 }
@@ -595,16 +605,16 @@ class CsvCommand extends BaseCommand {
   void run() {
     var args = argResults?.arguments;
     log.info("running list command with args $args");
-    if (containsArgument(args, "user", "-u")) {
-      var username = getArgumentValue(args, "user", "-u");
+    if (containsArgument(args, "--user", "-u")) {
+      var username = getArgumentValue(args, "--user", "-u");
       List<AccountItem>? items = accounts?.getFilteredListByUsername(username);
       printAsCsv(items);
-    } else if (containsArgument(args, "email", "-e")) {
-      var email = getArgumentValue(args, "email", "-e");
+    } else if (containsArgument(args, "--email", "-e")) {
+      var email = getArgumentValue(args, "--email", "-e");
       List<AccountItem>? items = accounts?.getFilteredListByEmail(email);
       printAsCsv(items);
-    } else if (containsArgument(args, "tags", "-t")) {
-      List<String> tags = getTagsArgumentValue(args, "tags", "-t");
+    } else if (containsArgument(args, "--tags", "-t")) {
+      List<String> tags = getTagsArgumentValue(args, "--tags", "-t");
       //List<String> tags =
       //    getArgumentValue(args, "tags", "-t").toLowerCase().split(",");
       List<AccountItem>? items = accounts?.getFilteredListByTags(tags);
@@ -784,7 +794,9 @@ abstract class BaseCommand extends Command {
       "--tags",
       "-n",
       "--notes",
-      "--url"
+      "--url",
+      "-v",
+      "--verbose",
     ].any((item) => arg == item)) {
       notArgument = false;
     }
@@ -826,8 +838,41 @@ abstract class BaseCommand extends Command {
     }
   }
 
-  void printAccountItems(List<AccountItem>? items) {
+  void printAccountItems(List<AccountItem>? items, {bool verbose = true}) {
     Console.normal("Found ${items?.length} account(s)");
+    var normalHeader = ['Account', 'User', 'Hint', 'Email', 'Tags'];
+    var verboseHeader = [
+      'Account',
+      'User',
+      'Hint',
+      'Email',
+      'Acct Number',
+      'Notes',
+      'Tags'
+    ];
+    var normalFiller = [
+      "---------",
+      "---------",
+      "---------",
+      "---------",
+      "---------"
+    ];
+    var verboseFiller = [
+      "---------",
+      "---------",
+      "---------",
+      "---------",
+      "---------",
+      "---------",
+      "---------"
+    ];
+    var header = normalHeader;
+    var filler = normalFiller;
+    if (verbose) {
+      header = verboseHeader;
+      filler = verboseFiller;
+    }
+
     List<List<dynamic>> data = [];
     int i = 1;
     for (AccountItem? item in items!) {
@@ -841,38 +886,23 @@ abstract class BaseCommand extends Command {
       rowData.add(hint);
       var email = (item == null || item.email.isEmpty) ? "" : item.email;
       rowData.add(email);
-      var accountNumber = (item == null || item.accountNumber.isEmpty)
-          ? ""
-          : item.accountNumber;
-      rowData.add(accountNumber);
-      var notes = (item == null || item.notes.isEmpty) ? "" : item.notes;
-      rowData.add(wrapText(notes, 25));
+      if (verbose) {
+        var accountNumber = (item == null || item.accountNumber.isEmpty)
+            ? ""
+            : item.accountNumber;
+        rowData.add(accountNumber);
+        var notes = (item == null || item.notes.isEmpty) ? "" : item.notes;
+        rowData.add(wrapText(notes, 25));
+      }
       List<String> tags = (item == null || item.tags.isEmpty) ? [] : item.tags;
       String tagString = tags.join(', ');
       rowData.add(tagString);
       data.add(rowData);
       i = i + 1;
       if (i % 5 == 0) {
-        data.add([
-          "---------",
-          "---------",
-          "---------",
-          "---------",
-          "---------",
-          "---------",
-          "---------"
-        ]);
+        data.add(filler);
       }
     }
-    var header = [
-      'Account',
-      'User',
-      'Hint',
-      'Email',
-      'Acct Number',
-      'Notes',
-      'Tags'
-    ];
     printResults(header, data);
   }
 
