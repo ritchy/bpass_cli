@@ -1,4 +1,4 @@
-import 'package:password_cli/google_api.dart';
+import 'google_api.dart';
 import 'package:logging/logging.dart';
 import 'dart:io';
 import 'dart:convert';
@@ -9,6 +9,7 @@ class Accounts {
   List<AccountItem> accounts = [];
   List<AccountItem> displayedAccounts = [];
   List<AccountItem> deletedAccounts = [];
+  //List<String> tags = ["tag1", "tag2"];
   List<String> tags = ['No Filter', 'Bank', 'Travel', 'Finance', 'Shopping'];
   String filterText = "";
   final log = Logger('Accounts');
@@ -208,11 +209,33 @@ class Accounts {
     }
   }
 
-  void removeAccount(AccountItem account) {
-    account.status = AccountItem.DELETED;
+  void handleRemovedAccount(AccountItem account) {
+    //account.status = AccountItem.DELETED;
+    log.info("moving account from active list to deleted list $account");
     deletedAccounts.add(account);
-    displayedAccounts.remove(account);
-    accounts.remove(account);
+
+    int index = -1;
+    for (int i = 0; i < displayedAccounts.length; ++i) {
+      if (displayedAccounts[i].id == account.id) {
+        index = i;
+        break;
+      }
+    }
+    if (index > -1) {
+      displayedAccounts.removeAt(index);
+    }
+    //displayedAccounts.remove(account);
+    index = -1;
+    for (int i = 0; i < accounts.length; ++i) {
+      if (accounts[i].id == account.id) {
+        index = i;
+        break;
+      }
+    }
+    if (index > -1) {
+      accounts.removeAt(index);
+    }
+    //accounts.remove(account);
   }
 
   void markAccountAsDeleted(AccountItem account) {
@@ -244,7 +267,7 @@ class Accounts {
         }
       }
     }
-    //print("You currently have ${accounts.length} accounts");
+    log.info("You currently have ${accounts.length} accounts");
     displayedAccounts = accounts;
     //notifyListeners();
   }
@@ -297,11 +320,15 @@ class Accounts {
         int? g = itemFromFile.lastUpdated?.millisecondsSinceEpoch;
         if (f != null && g != null && g > f) {
           //take google value
-          //log.info("replacing $currentItem with $itemFromFile");
-          replaceAccountItem(currentItem, itemFromFile);
+          log.fine("replacing $currentItem with $itemFromFile from Drive");
+          if (itemFromFile.status == AccountItem.ACTIVE) {
+            replaceAccountItem(currentItem, itemFromFile);
+          } else {
+            handleRemovedAccount(itemFromFile);
+          }
           somethingChanged = true;
         } else {
-          log.fine(
+          log.finer(
               "we have the latest account entry, not taking version in Drive ${currentItem.name}");
         }
       } else if (currentItem == null) {
@@ -319,7 +346,7 @@ class Accounts {
           somethingChanged = true;
         } else {
           //item was deleted
-          log.fine("$currentItem was deleted, let's compare anyway");
+          //log.info("$currentItem was deleted, let's compare");
           if ((itemFromFile.lastUpdated != null) &&
               (currentItem.lastUpdated != null)) {
             //log.info("evaluating item $currentItem");
@@ -331,7 +358,7 @@ class Accounts {
               replaceDeletedAccountItem(currentItem, itemFromFile);
               somethingChanged = true;
             } else {
-              log.fine(
+              log.finer(
                   "we have the latest account entry in deleted items, not taking version in Drive ${currentItem.name}");
             }
           }
@@ -479,7 +506,7 @@ class AccountItem {
 
   @override
   String toString() {
-    return "name: $name, username: $username hint: $hint email: $email account number: $accountNumber url: $url";
+    return "name: $name, username: $username, hint: $hint, email: $email, account number: $accountNumber, status $status, url: $url";
   }
 
   Map<String, dynamic> toJson() {
