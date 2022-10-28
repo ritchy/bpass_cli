@@ -269,7 +269,7 @@ Google Drive for automatic syncing with other devices.
                 "You have an outstanding request for access to existing accounts in Drive, run sync again when request has been granted.");
           } else if (outstandingRequest.accessStatus == ClientAccess.DENIED) {
             Console.normal(
-                "You sent a request that was denied run sync again if you want to send another request");
+                "You sent a request that was denied, run sync again if you want to send another request");
             await googleService?.removeOutstandingRequests();
             await googleService?.updateClientAccessRequests();
           } else if (outstandingRequest.accessStatus == ClientAccess.GRANTED) {
@@ -284,13 +284,10 @@ Google Drive for automatic syncing with other devices.
           }
         } else {
           Console.normal("-------> Request Access?");
-          stdout.write(
+          bool answeredYes = Console.prompt(
               "This appears to be your first sync and there's an existing file in Google Drive, would you like to request access? y/n > ");
-          stdin.lineMode = false;
-          final byte = stdin.readByteSync();
-          String input = String.fromCharCode(byte);
           Console.normal("");
-          if (input.isNotEmpty && input.toLowerCase().startsWith("y")) {
+          if (answeredYes) {
             await googleService?.generateNewClientAccessRequest();
             await googleService?.updateClientAccessRequests();
             Console.normal(
@@ -317,8 +314,8 @@ Google Drive for automatic syncing with other devices.
     log.finer("controller grantAccessRequest()");
     final GoogleService? gs = googleService;
     if (gs == null || !gs.loggedIn) {
-      stdout
-          .writeln("Trying to update access in Drive file, but not logged in");
+      Console.warning(
+          "Trying to update access in Drive file, but not logged in");
     } else {
       String? clientId = accessRequest.clientId;
       if (clientId != null) {
@@ -368,13 +365,10 @@ Google Drive for automatic syncing with other devices.
       }
       for (ClientAccess ca in toProcess) {
         log.info("Found request ${ca.clientName}");
-        stdout.write(
+        bool answeredYes = Console.prompt(
             'You got access request from ${ca.clientName}, would you like to approve? y/n > ');
-        stdin.lineMode = false;
-        final byte = stdin.readByteSync();
-        String input = String.fromCharCode(byte);
         Console.normal("");
-        if (input.isNotEmpty && input.toLowerCase().startsWith("y")) {
+        if (answeredYes) {
           Console.normal("Granting access ...");
           await grantAccessRequest(ca);
         } else {
