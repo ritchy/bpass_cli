@@ -319,7 +319,7 @@ class Accounts {
           somethingChanged = true;
         } else {
           //item was deleted
-          log.info("$currentItem was deleted, let's compare");
+          log.fine("$currentItem was deleted, let's compare anyway");
           if ((itemFromFile.lastUpdated != null) &&
               (currentItem.lastUpdated != null)) {
             //log.info("evaluating item $currentItem");
@@ -331,7 +331,7 @@ class Accounts {
               replaceDeletedAccountItem(currentItem, itemFromFile);
               somethingChanged = true;
             } else {
-              log.info(
+              log.fine(
                   "we have the latest account entry in deleted items, not taking version in Drive ${currentItem.name}");
             }
           }

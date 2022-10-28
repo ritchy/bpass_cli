@@ -28,6 +28,10 @@ Example:
   @override
   void run() async {
     Console.normal("Adding account entry");
+    var args = argResults?.arguments;
+    if (containsArgument(args, "--log", "-l")) {
+      setLoggingLevel(getArgumentValue(args, "--log", "-l"));
+    }
     log.info("REST: ${argResults?.rest}");
     String? accountName = argResults?.rest[0];
     if (accountName == null) {
@@ -63,6 +67,9 @@ before any delete.
   @override
   void run() async {
     var args = argResults?.arguments;
+    if (containsArgument(args, "--log", "-l")) {
+      setLoggingLevel(getArgumentValue(args, "--log", "-l"));
+    }
     String? toSearch = argResults?.rest[0];
     if (toSearch == null) {
       throw new Exception();
@@ -163,6 +170,11 @@ Are you sure you want to delete MyBank? y/n > y
   @override
   void run() async {
     //Console.normal("Deleting account entry");
+    var args = argResults?.arguments;
+    if (containsArgument(args, "--log", "-l")) {
+      setLoggingLevel(getArgumentValue(args, "--log", "-l"));
+    }
+
     String? toSearch = argResults?.rest[0];
     if (toSearch == null) {
       throw Exception();
@@ -222,6 +234,10 @@ Google Drive for automatic syncing with other devices.
 
   @override
   void run() async {
+    var args = argResults?.arguments;
+    if (containsArgument(args, "--log", "-l")) {
+      setLoggingLevel(getArgumentValue(args, "--log", "-l"));
+    }
     try {
       Console.normal("Syncing with Google Drive ...");
       googleService = GoogleService(appDirPath);
@@ -423,11 +439,13 @@ class SearchCommand extends BaseCommand {
   @override
   void run() {
     Console.normal("Searching ${argResults?.rest[0]} ...");
+    var args = argResults?.arguments;
+    if (containsArgument(args, "--log", "-l")) {
+      setLoggingLevel(getArgumentValue(args, "--log", "-l"));
+    }
     //print ("rest ${argResults?.rest}");
     String? toSearch = argResults?.rest[0];
-    if (toSearch == null) {
-      toSearch = "";
-    }
+    toSearch ??= "";
     List<AccountItem>? items = accounts?.getFilteredList(toSearch);
     printAccountItems(items);
     //for (AccountItem? item in items!) {
@@ -456,11 +474,13 @@ the provided account name.
   @override
   void run() {
     Console.normal("Searching ${argResults?.rest[0]} ...");
+    var args = argResults?.arguments;
+    if (containsArgument(args, "--log", "-l")) {
+      setLoggingLevel(getArgumentValue(args, "--log", "-l"));
+    }
     //print ("rest ${argResults?.rest}");
     String? toSearch = argResults?.rest[0];
-    if (toSearch == null) {
-      toSearch = "";
-    }
+    toSearch ??= "";
     AccountItem? account = accounts?.findAccountItemByName(toSearch);
     if (account != null) {
       var passText =
@@ -509,10 +529,13 @@ listing of search results that include the hint.
   @override
   void run() {
     Console.normal("Searching ${argResults?.rest[0]} ...");
-    String? toSearch = argResults?.rest[0];
-    if (toSearch == null) {
-      toSearch = "";
+    var args = argResults?.arguments;
+    if (containsArgument(args, "--log", "-l")) {
+      setLoggingLevel(getArgumentValue(args, "--log", "-l"));
     }
+
+    String? toSearch = argResults?.rest[0];
+    toSearch ??= "";
     AccountItem? account = accounts?.findAccountItemByName(toSearch);
     if (account != null) {
       Console.normal(account.hint.isEmpty ? "<empty hint>" : account.hint);
@@ -554,6 +577,9 @@ class ListCommand extends BaseCommand {
   void run() {
     try {
       var args = argResults?.arguments;
+      if (containsArgument(args, "--log", "-l")) {
+        setLoggingLevel(getArgumentValue(args, "--log", "-l"));
+      }
       bool verbose = false;
       log.info("running list command with args $args");
       if (containsArgument(args, "--verbose", "-v")) {
@@ -817,6 +843,18 @@ abstract class BaseCommand extends Command {
       } else {
         return true;
       }
+    }
+  }
+
+  void setLoggingLevel(String level) {
+    if (level.toLowerCase() == Level.WARNING.name.toLowerCase()) {
+      Logger.root.level = Level.WARNING;
+    } else if (level.toLowerCase() == Level.INFO.name.toLowerCase()) {
+      Logger.root.level = Level.INFO;
+    } else if (level.toLowerCase() == "verbose") {
+      Logger.root.level = Level.FINE;
+    } else {
+      Logger.root.level = Level.OFF;
     }
   }
 

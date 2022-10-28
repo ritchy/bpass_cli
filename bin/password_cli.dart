@@ -15,6 +15,7 @@ const tags = "tags";
 const url = "url";
 const notes = "notes";
 const verbose = "verbose";
+const logOption = "log";
 
 /***
  * 
@@ -47,6 +48,8 @@ Command Line Account Manager
   runner.argParser.addOption(accountNumber, abbr: "a", help: "account number");
   runner.argParser.addOption(notes, abbr: "n", help: "account notes");
   runner.argParser.addOption(url, help: "account url");
+  runner.argParser.addOption(logOption,
+      abbr: "l", help: "increase logging output: verbose, info or warning");
   runner.argParser.addFlag(verbose, abbr: "v", help: "verbose output");
   runner.argParser.addOption(tags,
       abbr: "t",
@@ -103,7 +106,7 @@ Future<void> initLogger() async {
   if (!logFile.existsSync()) {
     logFile.createSync();
   }
-  Logger.root.level = Level.INFO;
+  Logger.root.level = Level.WARNING;
   //Level.ALL; // defaults to Level.INFO
   Logger.root.onRecord.listen((record) async {
     stdout.writeln('${record.level.name}: ${record.time}: ${record.message}');
