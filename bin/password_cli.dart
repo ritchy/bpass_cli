@@ -48,13 +48,13 @@ Command Line Account Manager
   runner.argParser.addOption(accountNumber, abbr: "a", help: "account number");
   runner.argParser.addOption(notes, abbr: "n", help: "account notes");
   runner.argParser.addOption(url, help: "account url");
-  runner.argParser.addOption(logOption,
-      abbr: "l", help: "increase logging output: verbose, info or warning");
-  runner.argParser.addFlag(verbose, abbr: "v", help: "verbose output");
   runner.argParser.addOption(tags,
       abbr: "t",
       help:
           "account tags for categorization and grouping, separated by commas");
+  runner.argParser.addOption(logOption,
+      abbr: "l", help: "increase logging output: verbose, info or warning");
+  runner.argParser.addFlag(verbose, abbr: "v", help: "verbose output");
 
   try {
     await runner.run(arguments);
