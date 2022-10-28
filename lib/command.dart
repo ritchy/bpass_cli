@@ -72,7 +72,7 @@ before any delete.
     }
     String? toSearch = argResults?.rest[0];
     if (toSearch == null) {
-      throw new Exception();
+      throw Exception();
     }
     AccountItem? account = getSingleAccount(toSearch);
     if (account == null) {
@@ -135,12 +135,8 @@ before any delete.
         await accounts?.updateAccountFiles(null);
         List<AccountItem>? searchResults =
             accounts?.getFilteredListByAccountName(toSearch);
+        searchResults ??= [];
         printAccountItems(searchResults);
-
-        //accounts?.replaceAccountItem()
-        //accounts?.addAccount(getAccountItem(accountName, argResults?.arguments));
-        //accounts?.saveUpdates();
-
       } else {
         Console.normal("Need to provide something to update!\n\nSee Usage:\n");
         throw Exception();
@@ -447,6 +443,7 @@ class SearchCommand extends BaseCommand {
     String? toSearch = argResults?.rest[0];
     toSearch ??= "";
     List<AccountItem>? items = accounts?.getFilteredList(toSearch);
+    items ??= [];
     printAccountItems(items);
     //for (AccountItem? item in items!) {
     //  print ("Item $item");
@@ -586,24 +583,19 @@ class ListCommand extends BaseCommand {
         print("got verbose");
         verbose = true;
       }
+      List<AccountItem>? items = accounts?.accounts;
       if (containsArgument(args, "--user", "-u")) {
         var username = getArgumentValue(args, "--user", "-u");
-        List<AccountItem>? items =
-            accounts?.getFilteredListByUsername(username);
-        printAccountItems(items, verbose: verbose);
+        items = accounts?.getFilteredListByUsername(username);
       } else if (containsArgument(args, "--email", "-e")) {
         var email = getArgumentValue(args, "--email", "-e");
-        List<AccountItem>? items = accounts?.getFilteredListByEmail(email);
-        printAccountItems(items, verbose: verbose);
+        items = accounts?.getFilteredListByEmail(email);
       } else if (containsArgument(args, "--tags", "-t")) {
         List<String> tags = getTagsArgumentValue(args, "--tags", "-t");
-        //getArgumentValue(args, "tags", "-t").toLowerCase().split(",");
-        List<AccountItem>? items = accounts?.getFilteredListByTags(tags);
-        printAccountItems(items, verbose: verbose);
-      } else {
-        List<AccountItem>? items = accounts?.accounts;
-        printAccountItems(items, verbose: verbose);
+        items = accounts?.getFilteredListByTags(tags);
       }
+      items ??= [];
+      printAccountItems(items, verbose: verbose);
     } catch (e) {
       log.severe("exception happned $e");
     }
@@ -876,8 +868,12 @@ abstract class BaseCommand extends Command {
     }
   }
 
-  void printAccountItems(List<AccountItem>? items, {bool verbose = true}) {
-    Console.normal("Found ${items?.length} account(s)");
+  void printAccountItems(List<AccountItem> items, {bool verbose = true}) {
+    //lets always sort by account name
+    items.sort((accountOne, accountTwo) =>
+        accountOne.name.toLowerCase().compareTo(accountTwo.name.toLowerCase()));
+
+    Console.normal("Found ${items.length} account(s)");
     var normalHeader = ['Account', 'User', 'Hint', 'Email', 'Tags'];
     var verboseHeader = [
       'Account',
@@ -913,26 +909,24 @@ abstract class BaseCommand extends Command {
 
     List<List<dynamic>> data = [];
     int i = 1;
-    for (AccountItem? item in items!) {
+    for (AccountItem item in items) {
       List<String> rowData = [];
-      var name = (item == null || item.name.isEmpty) ? "" : item.name;
+      var name = (item.name.isEmpty) ? "" : item.name;
       rowData.add(name);
-      var username =
-          (item == null || item.username.isEmpty) ? "" : item.username;
+      var username = (item.username.isEmpty) ? "" : item.username;
       rowData.add(username);
-      var hint = (item == null || item.hint.isEmpty) ? "" : item.hint;
+      var hint = (item.hint.isEmpty) ? "" : item.hint;
       rowData.add(hint);
-      var email = (item == null || item.email.isEmpty) ? "" : item.email;
+      var email = (item.email.isEmpty) ? "" : item.email;
       rowData.add(email);
       if (verbose) {
-        var accountNumber = (item == null || item.accountNumber.isEmpty)
-            ? ""
-            : item.accountNumber;
+        var accountNumber =
+            (item.accountNumber.isEmpty) ? "" : item.accountNumber;
         rowData.add(accountNumber);
-        var notes = (item == null || item.notes.isEmpty) ? "" : item.notes;
+        var notes = (item.notes.isEmpty) ? "" : item.notes;
         rowData.add(wrapText(notes, 25));
       }
-      List<String> tags = (item == null || item.tags.isEmpty) ? [] : item.tags;
+      List<String> tags = (item.tags.isEmpty) ? [] : item.tags;
       String tagString = tags.join(', ');
       rowData.add(tagString);
       data.add(rowData);
