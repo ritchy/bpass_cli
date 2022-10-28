@@ -25,12 +25,13 @@ class GoogleService {
     log.finer("creating new google service..");
   }
   void initCryptoHandler() {
-    //print("init crypt $appDirPath and ${googleSettings.keyAsBase64}");
-    if (googleSettings.keyAsBase64 == null) {
+    log.fine("init crypt $appDirPath and ${googleSettings.keyAsBase64}");
+    String? key = googleSettings.keyAsBase64;
+    if (key == null || key.isEmpty) {
       cryptoHandler = AccountFileEncryptionHandler(appDirPath!);
     } else {
-      cryptoHandler = AccountFileEncryptionHandler(appDirPath!,
-          keyAsBase64: googleSettings.keyAsBase64!);
+      cryptoHandler =
+          AccountFileEncryptionHandler(appDirPath!, keyAsBase64: key);
     }
   }
 
@@ -421,7 +422,10 @@ class GoogleService {
 
   Future<bool> clientAccessFileExistInDrive() async {
     // Check if the folder exists. If it doesn't exist, create it and return the ID.
-    final folderId = await _getFolderId(driveApi!);
+    if (driveApi == null) {
+      Exception("Don't have API references, cannot check for file in Drive");
+    }
+    final folderId = await _getFolderId(driveApi);
     if (folderId == null) {
       //await showMessage(context, "Failure", "Error");
       log.warning("Unable to get bytestream folder");
@@ -596,7 +600,7 @@ class GoogleService {
       String? decryptedKey = await cryptoHandler?.decryptAccessKey(enryptedKey);
       if (decryptedKey != null && decryptedKey.isNotEmpty) {
         googleSettings.keyAsBase64 = decryptedKey;
-        print("updating $googleSettings");
+        log.info("updating $googleSettings");
         await updateGoogleSettings(googleSettings);
       }
       //print("decrypted key $decryptedKey");
@@ -1138,9 +1142,10 @@ class AccountFileEncryptionHandler {
 
   Future<String> decryptStringContent(String encryptedContentAsBase64) async {
     //log.finer("CryptoHandler(): unEncryptStringContent()");
-    if (keyAsBase64 != null) {
+    String? key = keyAsBase64;
+    if (key != null && key.isNotEmpty) {
       return await unEncryptStringContentFromBase64(
-          keyAsBase64!, encryptedContentAsBase64);
+          key, encryptedContentAsBase64);
     } else {
       log.severe("Cannot un-encrypt this string because provided key is null");
       return "[]";
@@ -1217,7 +1222,7 @@ class ClientAccess {
     //print("converting $this");
     clientId ??= DateTime.now().millisecondsSinceEpoch.toString();
     clientName ??= Platform.operatingSystem;
-    lastUpdated = DateTime.now();
+    lastUpdated ??= DateTime.now();
     publicKey ??= "";
     encryptedAccessKey ??= "";
     final Map<String, dynamic> clients = Map<String, dynamic>();
