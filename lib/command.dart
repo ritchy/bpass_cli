@@ -6,6 +6,7 @@ import 'package:logging/logging.dart';
 import 'package:csv/csv.dart';
 import 'dart:io';
 import 'console.dart';
+import 'clippy.dart' as clippy;
 
 final log = Logger('command');
 
@@ -469,7 +470,7 @@ the provided account name.
 """;
 
   @override
-  void run() {
+  void run() async {
     Console.normal("Searching ${argResults?.rest[0]} ...");
     var args = argResults?.arguments;
     if (containsArgument(args, "--log", "-l")) {
@@ -484,7 +485,8 @@ the provided account name.
           account.password.isEmpty ? "<empty password>" : account.password;
       var hintText =
           account.hint.isEmpty ? "-hint <empty hint>" : "-hint ${account.hint}";
-      Console.normal("$passText $hintText");
+      await clippy.write(passText);
+      Console.normal("$passText $hintText <password was copied to clipboard");
     } else {
       List<AccountItem>? items =
           accounts?.getFilteredListByAccountName(toSearch);
@@ -499,9 +501,24 @@ the provided account name.
             items[0].password.isEmpty ? "<empty password>" : items[0].password;
         var hintText =
             items[0].hint.isEmpty ? "<empty hint>" : "-hint ${items[0].hint}";
-        Console.normal("$passText $hintText");
+        await clippy.write(passText);
+        Console.normal("$passText $hintText <password was copied to clipboard");
       }
     }
+  }
+
+  Future<bool> write(covariant String input) async {
+    final process = await Process.start('pbcopy', [], runInShell: true);
+    //process.stderr.transform(utf8.decoder).listen(print);
+    process.stdin.write(input);
+
+    try {
+      await process.stdin.close();
+    } catch (e) {
+      return false;
+    }
+
+    return await process.exitCode == 0;
   }
 }
 
