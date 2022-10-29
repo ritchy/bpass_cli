@@ -485,8 +485,13 @@ the provided account name.
           account.password.isEmpty ? "<empty password>" : account.password;
       var hintText =
           account.hint.isEmpty ? "-hint <empty hint>" : "-hint ${account.hint}";
-      await clippy.write(passText);
-      Console.normal("$passText $hintText <password was copied to clipboard");
+      String passwordMessage =
+          " <-- password is empty, nothing to copy to clipboard";
+      if (account.password.isNotEmpty) {
+        await clippy.write(passText);
+        passwordMessage = " <-- password was copied to clipboard";
+      }
+      Console.normal("$passText $hintText $passwordMessage");
     } else {
       List<AccountItem>? items =
           accounts?.getFilteredListByAccountName(toSearch);
@@ -501,8 +506,13 @@ the provided account name.
             items[0].password.isEmpty ? "<empty password>" : items[0].password;
         var hintText =
             items[0].hint.isEmpty ? "<empty hint>" : "-hint ${items[0].hint}";
-        await clippy.write(passText);
-        Console.normal("$passText $hintText <password was copied to clipboard");
+        String passwordMessage =
+            " <-- password is empty, nothing to copy to clipboard";
+        if (items[0].password.isNotEmpty) {
+          await clippy.write(passText);
+          passwordMessage = " <-- password was copied to clipboard";
+        }
+        Console.normal("$passText $hintText $passwordMessage");
       }
     }
   }

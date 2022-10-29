@@ -15,8 +15,10 @@ dart pub global activate --source path .
 in `lib/`, and example unit test in `test/`.
 
 dart run bin/password_cli.dart list
+dart compile exe bin/password_cli.dart -o bin/bpass
 
-## clipboard
+## clipboard uses system commands like:
+
 pbcopy < file.name
 
 
