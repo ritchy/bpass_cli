@@ -100,13 +100,14 @@ String getAppDirPath() {
 }
 
 Future<void> initLogger() async {
+  /***
   String path = getAppDirPath();
-
   File logFile = File("$path${Platform.pathSeparator}bpass.log");
   if (!logFile.existsSync()) {
     logFile.createSync();
   }
-  Logger.root.level = Level.WARNING;
+  ***/
+  Logger.root.level = Level.OFF;
   //Level.ALL; // defaults to Level.INFO
   Logger.root.onRecord.listen((record) async {
     stdout.writeln('${record.level.name}: ${record.time}: ${record.message}');
