@@ -9,3 +9,7 @@ build/
 lib/client.dart
 
 pubspec.lock
+
+.DS_Store
+bin/.DS_Store
+
