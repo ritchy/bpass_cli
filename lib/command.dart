@@ -678,6 +678,7 @@ class CsvCommand extends BaseCommand {
       'Hint',
       'Email',
       'Acct Number',
+      'Web URL',
       'Notes',
       'Tags'
     ];
@@ -698,6 +699,8 @@ class CsvCommand extends BaseCommand {
           ? ""
           : item.accountNumber;
       rowData.add(accountNumber);
+      var url = (item == null || item.url.isEmpty) ? "" : item.url;
+      rowData.add(url);
       var notes = (item == null || item.notes.isEmpty) ? "" : item.notes;
       rowData.add(wrapText(notes, 25));
       List<String> tags = (item == null || item.tags.isEmpty) ? [] : item.tags;
@@ -908,6 +911,7 @@ abstract class BaseCommand extends Command {
       'Hint',
       'Email',
       'Acct Number',
+      'Web URL',
       'Notes',
       'Tags'
     ];
@@ -919,6 +923,7 @@ abstract class BaseCommand extends Command {
       "---------"
     ];
     var verboseFiller = [
+      "---------",
       "---------",
       "---------",
       "---------",
@@ -950,6 +955,8 @@ abstract class BaseCommand extends Command {
         var accountNumber =
             (item.accountNumber.isEmpty) ? "" : item.accountNumber;
         rowData.add(accountNumber);
+        var url = (item.url.isEmpty) ? "" : item.url;
+        rowData.add(url);
         var notes = (item.notes.isEmpty) ? "" : item.notes;
         rowData.add(wrapText(notes, 25));
       }
