@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:_discoveryapis_commons/_discoveryapis_commons.dart' as commons;
+import 'package:password_cli/console.dart';
 import 'encryption_handler.dart';
 import 'client.dart';
 
@@ -324,6 +325,13 @@ class GoogleService {
           "Unable to encrypt google file, one of these is null, app dir path: $appDirPath or our key: ${googleSettings.keyAsBase64}, so not saving");
     }
     return null;
+  }
+
+  Future<void> initEncryptionKey() async {
+    if (googleSettings.keyAsBase64 == null) {
+      googleSettings.keyAsBase64 = generateBase64AesKey();
+      await updateGoogleSettings(googleSettings);
+    }
   }
 
   Future<void> updateEncryptedAccountFile(String contents) async {
@@ -917,11 +925,15 @@ class GoogleService {
     File? file = await getSettingsFile();
     log.info("loading settings from file ... ${file?.path}");
     if (file != null) {
-      String? contents = file.readAsStringSync();
-      if (contents != null) {
+      int l = await file.length();
+      log.info("file length: $l");
+      String contents = file.readAsStringSync();
+      log.fine("got contents $contents");
+      if (contents.isNotEmpty) {
         try {
           var jsonResponse = jsonDecode(contents);
           //for (var entry in jsonResponse) {
+          var dateCreated = jsonResponse['date_created'];
           var authClient = jsonResponse['auth_client'];
           var lastUpdatedString = authClient['last_updated'];
           var data = authClient['data'];
@@ -929,7 +941,10 @@ class GoogleService {
           var expiry = authClient['expiry'];
           var refreshToken = authClient['refresh_token'];
           var keyAsBase64 = jsonResponse['key_base64'];
+          keyAsBase64 ??= "";
           var clientAccessId = jsonResponse['client_access_id'];
+          clientAccessId ??= "";
+          log.info("key: $keyAsBase64 id: $clientAccessId");
           return GoogleSettings(
               authClientSettings:
                   AuthClientSettings(data, type, expiry, refreshToken),
@@ -940,7 +955,7 @@ class GoogleService {
           print("unable to read settings file $e");
         }
       } else {
-        print("Settings file empty");
+        log.info("Settings file empty");
       }
     }
     return null;
@@ -953,7 +968,9 @@ class GoogleService {
       return;
     }
     if (googleSettings.keyAsBase64 == null ||
-        googleSettings.keyAsBase64!.isEmpty) {}
+        googleSettings.keyAsBase64!.isEmpty) {
+      log.info("No key created yet");
+    }
     var sink = file.openWrite();
     JsonEncoder encoder = const JsonEncoder.withIndent('  ');
     String prettyprint = encoder.convert(googleSettings);
@@ -975,10 +992,10 @@ class GoogleService {
     //print("file path: $jsonDocument");
     File file = File(jsonDocument);
     if (!file.existsSync()) {
-      stdout.writeln("Settings file does not exist, creating ...");
+      Console.normal("Settings file does not exist, creating ...");
       file.createSync();
       var sink = file.openWrite();
-      sink.write('{"date-created" : "${DateTime.now()}"}\n');
+      //sink.write('{"date_created" : "${DateTime.now()}"}\n');
       // Close the IOSink to free system resources.
       await sink.close();
       return file;

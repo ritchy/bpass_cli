@@ -314,11 +314,20 @@ Google Drive for automatic syncing with other devices.
       //no file in Drive, so we are the first one to sync, no need to reconcile, but we need to set up encryption
       String? key = googleService?.googleSettings.keyAsBase64;
       if (key != null && key.isNotEmpty) {
-        //looks like we already set up encryption key, so just synd
-        accounts?.updateAccountFiles(googleService);
-      } else {
+        //looks like we already set up encryption key, so just upload local
         Console.normal(
-            "This appears to be your first sync, generating encryption keys ...");
+            "Google drive file doesn't exist, uploading our copy ...");
+        await accounts?.updateAccountFiles(googleService);
+      } else {
+        if (googleService == null) {
+          Console.normal(
+              "Unable to initialize Google Drive service, did you get logged in successfully?");
+        } else {
+          Console.normal(
+              "This appears to be your first Drive sync, generating encryption keys and uploading file for first time ...");
+          await googleService?.initEncryptionKey();
+          await accounts?.updateAccountFiles(googleService);
+        }
       }
     }
   }

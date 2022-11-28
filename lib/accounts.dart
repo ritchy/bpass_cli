@@ -1,93 +1,28 @@
-import 'google_api.dart';
 import 'package:logging/logging.dart';
+import 'google_api.dart';
 import 'dart:io';
 import 'dart:convert';
+import 'console.dart';
 
 class Accounts {
   File? file;
 
   List<AccountItem> accounts = [];
-  List<AccountItem> displayedAccounts = [];
   List<AccountItem> deletedAccounts = [];
-  //List<String> tags = ["tag1", "tag2"];
-  List<String> tags = ['No Filter', 'Bank', 'Travel', 'Finance', 'Shopping'];
-  String filterText = "";
+  List<String> tags = ['bank', 'travel', 'finance', 'work', 'shopping'];
   final log = Logger('Accounts');
-
-  List<String> getTitleRows() {
-    List<String> titleRows = [];
-    displayedAccounts.forEach((element) => titleRows.add(element.name));
-    return titleRows;
-  }
-
-  String getAccountName(int index) {
-    if (index < displayedAccounts.length) {
-      return displayedAccounts[index].name;
-    } else {
-      print(
-          "why are we requeasting this index $index when the length is ${displayedAccounts.length}");
-      return "";
-    }
-  }
 
   int getNumberOfTags() {
     return tags.length;
   }
 
-  List<String> getAccountTags(int accountIndex) {
-    return displayedAccounts[accountIndex].tags;
-  }
-
   void addAccount(AccountItem item) {
+    //print("accounts adding account $item");
     if (item.status != AccountItem.DELETED) {
       accounts.add(item);
     } else {
       deletedAccounts.add(item);
     }
-    //clearFilter();
-    //notifyListeners();
-  }
-
-  AccountItem getAccount(int index) {
-    return displayedAccounts[index];
-  }
-
-  void addBlankAccount() {
-    //print("adding blank account..");
-    var id = DateTime.now().millisecondsSinceEpoch;
-    addAccount(AccountItem("", id, "", "", "", "", "", "", "", [],
-        lastUpdated: DateTime.now()));
-  }
-
-  void insertBlankDisplayedAccount() {
-    var id = DateTime.now().millisecondsSinceEpoch;
-    //if (id > 1665347833394) {
-    //  return;
-    //}
-    displayedAccounts.insert(
-        0,
-        AccountItem("", id, "", "", "", "", "", "", "", [],
-            lastUpdated: DateTime.now()));
-  }
-
-  void clearFilter() {
-    removeEmptyDisplayAccounts();
-    filterText = "";
-    displayedAccounts = accounts;
-    insertBlankDisplayedAccount();
-    //notifyListeners();
-  }
-
-  void filterAccounts(String searchTerm) {
-    removeEmptyDisplayAccounts();
-    filterText = searchTerm;
-    if (searchTerm == "") {
-      displayedAccounts = accounts;
-    } else {
-      displayedAccounts = getFilteredList(searchTerm);
-    }
-    insertBlankDisplayedAccount();
-    //notifyListeners();
   }
 
   List<AccountItem> getFilteredList(String searchTerm) {
@@ -99,18 +34,16 @@ class Accounts {
         .toList();
   }
 
-  void filterAccountsByTag(String tagSearch) {
+  List<AccountItem> filterAccountsByTag(String tagSearch) {
     //print("filtering accounts by tag: $tagSearch");
-    removeEmptyDisplayAccounts();
-    filterText = tagSearch;
-    if (tagSearch == "No Filter") {
-      displayedAccounts = accounts;
+    String lowerCaseTagSearch = tagSearch.toLowerCase();
+    if (tagSearch == "no tags") {
+      return accounts;
     } else {
-      displayedAccounts =
-          accounts.where((entry) => entry.tags.contains(tagSearch)).toList();
+      return accounts
+          .where((entry) => entry.tags.contains(lowerCaseTagSearch))
+          .toList();
     }
-    insertBlankDisplayedAccount();
-    //notifyListeners();
   }
 
   List<AccountItem> getFilteredListByAccountName(String searchTerm) {
@@ -156,7 +89,7 @@ class Accounts {
   List<String> getTags() {
     //print("getTags: $tags");
     if (tags.isEmpty) {
-      return ["Empty"];
+      return ["empty"];
     } else {
       return tags.toSet().toList();
     }
@@ -164,11 +97,11 @@ class Accounts {
 
   void addTag(List<String> newTags) {
     for (String tagValue in newTags) {
-      if (!tags.contains(tagValue)) {
-        tags.add(tagValue);
+      String lowerCase = tagValue.toLowerCase();
+      if (!tags.contains(lowerCase)) {
+        tags.add(lowerCase);
       }
     }
-    //notifyListeners();
   }
 
   void setTags(int accountId, List<String> tags) {}
@@ -177,21 +110,10 @@ class Accounts {
     return accounts.length;
   }
 
-  int getNumberOfDisplayedAccounts() {
-    return displayedAccounts.length;
-  }
-
-  void removeEmptyDisplayAccounts() {
-    List<AccountItem> toRemove = [];
-    for (AccountItem account in displayedAccounts) {
-      if (account.isEmpty()) {
-        toRemove.add(account);
-      }
-    }
-    for (AccountItem account in toRemove) {
-      //print("removing empty ..");
-      displayedAccounts.remove(account);
-    }
+  List<AccountItem> getAccountListCopy() {
+    List<AccountItem> toReturn = [];
+    toReturn.addAll(accounts);
+    return toReturn;
   }
 
   void removeEmptyAccounts() {
@@ -213,19 +135,7 @@ class Accounts {
     //account.status = AccountItem.DELETED;
     log.info("moving account from active list to deleted list $account");
     deletedAccounts.add(account);
-
     int index = -1;
-    for (int i = 0; i < displayedAccounts.length; ++i) {
-      if (displayedAccounts[i].id == account.id) {
-        index = i;
-        break;
-      }
-    }
-    if (index > -1) {
-      displayedAccounts.removeAt(index);
-    }
-    //displayedAccounts.remove(account);
-    index = -1;
     for (int i = 0; i < accounts.length; ++i) {
       if (accounts[i].id == account.id) {
         index = i;
@@ -235,7 +145,6 @@ class Accounts {
     if (index > -1) {
       accounts.removeAt(index);
     }
-    //accounts.remove(account);
   }
 
   void markAccountAsDeleted(AccountItem account) {
@@ -250,26 +159,30 @@ class Accounts {
   void loadFile(File file) {
     this.file = file;
     log.info("loading from file: ${file.path}");
-    var id = DateTime.now().millisecondsSinceEpoch;
-    accounts.add(AccountItem("", id, "", "", "", "", "", "", "", []));
+    //var id = DateTime.now().millisecondsSinceEpoch;
+    //accounts.add(
+    //    AccountItem("", id, "", "", "", "", "", "", "", [], newAccount: true));
     //title_rows.add("");
     //file.openRead();
     String contents = file.readAsStringSync();
-    var jsonResponse = jsonDecode(contents);
-    for (var entry in jsonResponse) {
-      AccountItem item = getAccountItemFromJsonEntry(entry);
-      addAccount(item);
-      //accounts.add(item);
-      //add any new tags to global tag list
-      for (String tagValue in item.tags) {
-        if (!tags.contains(tagValue)) {
-          tags.add(tagValue);
+    if (contents.isEmpty || contents.trim().isEmpty) {
+      //Console.normal(message)
+      updateAccountFiles(null);
+    } else {
+      var jsonResponse = jsonDecode(contents);
+      for (var entry in jsonResponse) {
+        AccountItem item = getAccountItemFromJsonEntry(entry);
+        addAccount(item);
+        //accounts.add(item);
+        //add any new tags to global tag list
+        for (String tagValue in item.tags) {
+          if (!tags.contains(tagValue)) {
+            tags.add(tagValue);
+          }
         }
       }
     }
     log.info("You currently have ${accounts.length} accounts");
-    displayedAccounts = accounts;
-    //notifyListeners();
   }
 
   AccountItem getAccountItemFromJsonEntry(var entry) {
@@ -402,6 +315,18 @@ class Accounts {
     return somethingChanged;
   }
 
+  void updateAccountItem(AccountItem newAccountItem) {
+    for (int i = 0; i < accounts.length; ++i) {
+      AccountItem item = accounts[i];
+      if (item.id == newAccountItem.id) {
+        log.info("updating $item to $newAccountItem");
+        newAccountItem.lastUpdated = DateTime.now();
+        accounts[i] = newAccountItem;
+        break;
+      }
+    }
+  }
+
   AccountItem? findAccountItemById(int accountId) {
     for (AccountItem account in accounts) {
       if (account.id == accountId) {
@@ -437,6 +362,23 @@ class Accounts {
     }
   }
 
+  void addWelcomeAccount() {
+    var id = DateTime.now().millisecondsSinceEpoch;
+    accounts.add(AccountItem(
+        "Welcome",
+        id,
+        "welcomeuser",
+        "",
+        "hint: welcome",
+        "welcome@email.com",
+        "",
+        "",
+        "You can edit this acccount or delete completely",
+        [],
+        lastUpdated: DateTime.now(),
+        newAccount: true));
+  }
+
   void replaceDeletedAccountItem(AccountItem toReplace, AccountItem newItem) {
     int itemIndex = accounts.indexOf(toReplace);
     if (itemIndex >= 0) {
@@ -464,23 +406,33 @@ class Accounts {
   }
 
   Future<void> updateAccountFiles(GoogleService? googleService) async {
-    print("saving ${accounts.length} accounts");
-    removeEmptyDisplayAccounts();
     removeEmptyAccounts();
+    if (accounts.isEmpty) {
+      addWelcomeAccount();
+    }
+    Console.normal("saving ${accounts.length} accounts");
     List combinedAccounts = [];
     combinedAccounts.addAll(accounts);
     combinedAccounts.addAll(deletedAccounts);
-    var sink = file?.openWrite();
-    JsonEncoder encoder = const JsonEncoder.withIndent('  ');
-    String prettyprint = encoder.convert(combinedAccounts);
-    sink?.write(prettyprint);
-    // Close the IOSink to free system resources.
-    await sink?.close();
-    if (googleService != null) {
-      //print("Calling google.updateAccountFile()");
-      await googleService.updateAccountFileInDrive(prettyprint);
+    if (file == null) {
+      log.warning("account file hasn't been loaded");
+      //print('file is null?');
+    } else {
+      var sink = file?.openWrite();
+      JsonEncoder encoder = const JsonEncoder.withIndent('  ');
+      String prettyprint = encoder.convert(combinedAccounts);
+      //print("saving $prettyprint");
+      sink?.write(prettyprint);
+      // Close the IOSink to free system resources.
+      await sink?.close();
+      if (googleService != null) {
+        //print("Calling google.updateAccountFile()");
+        await googleService.updateAccountFileInDrive(prettyprint);
+      } else {
+        Console.normal(
+            "Google service isn't initialized, did you get logged in successfully?");
+      }
     }
-    insertBlankDisplayedAccount();
   }
 }
 
@@ -499,14 +451,15 @@ class AccountItem {
   List<String> tags;
   static const String ACTIVE = "active";
   static const String DELETED = "deleted";
+  bool newAccount;
 
   AccountItem(this.name, this.id, this.username, this.password, this.hint,
       this.email, this.accountNumber, this.url, this.notes, this.tags,
-      {this.lastUpdated, this.status = "active"});
+      {this.lastUpdated, this.status = "active", this.newAccount = false});
 
   @override
   String toString() {
-    return "name: $name, username: $username, hint: $hint, email: $email, account number: $accountNumber, status $status, url: $url";
+    return "name: $name, username: $username, hint: $hint, email: $email, account number: $accountNumber, status $status, url: $url, new: $newAccount, tags: $tags";
   }
 
   Map<String, dynamic> toJson() {
@@ -542,5 +495,17 @@ class AccountItem {
         (hint == "") &&
         (notes == "") &&
         (tags.isEmpty));
+  }
+
+  bool isEqual(AccountItem item) {
+    return ((name == item.name) &&
+        (username == item.username) &&
+        (password == item.password) &&
+        (accountNumber == item.accountNumber) &&
+        (url == item.url) &&
+        (email == item.email) &&
+        (hint == item.hint) &&
+        (notes == item.notes) &&
+        (tags == item.tags));
   }
 }
