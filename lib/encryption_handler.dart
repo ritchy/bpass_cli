@@ -168,7 +168,7 @@ Future<String> unencryptContentFromPemFiles(String publicPemFilePath,
 
 String generateBase64AesKey() {
   encrypt.SecureRandom sr = encrypt.SecureRandom(32);
-  print("sr: ${sr.base64}");
+  //print("sr: ${sr.base64}");
   return sr.base64;
 }
 
