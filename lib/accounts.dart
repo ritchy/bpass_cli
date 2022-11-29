@@ -428,10 +428,12 @@ class Accounts {
       if (googleService != null) {
         //print("Calling google.updateAccountFile()");
         await googleService.updateAccountFileInDrive(prettyprint);
-      } else {
-        Console.normal(
-            "Google service isn't initialized, did you get logged in successfully?");
       }
+      //there may be good reason we're not logged in (didn't call 'sync')
+      //else {
+      //  Console.normal(
+      //      "Google service isn't initialized, did you get logged in successfully?");
+      // }
     }
   }
 }
