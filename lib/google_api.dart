@@ -929,7 +929,7 @@ class GoogleService {
       log.info("file length: $l");
       String contents = file.readAsStringSync();
       log.fine("got contents $contents");
-      if (contents.isNotEmpty) {
+      if (contents.isNotEmpty && contents.trim().isNotEmpty) {
         try {
           var jsonResponse = jsonDecode(contents);
           //for (var entry in jsonResponse) {
