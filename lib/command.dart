@@ -60,8 +60,8 @@ class UpdateCommand extends BaseCommand {
   final description = """Update an account entry in your account file
 -----------
 
-Narrows down to a single account based on provided account name and will confirm
-before any delete.
+Narrows down to a single account based on provided account name and will update
+provided information.  Search string results cannot return multiple entries.
 
 """;
   //findAccountItemByName
@@ -589,8 +589,8 @@ listing of search results that include the hint.
 }
 
 class ListCommand extends BaseCommand {
-  Accounts? accounts;
-  ListCommand(this.accounts) : super(accounts);
+  //Accounts? accounts;
+  ListCommand(accounts) : super(accounts);
 
   @override
   final name = 'list';
@@ -602,7 +602,7 @@ class ListCommand extends BaseCommand {
 
   You provide a search or argument like email 'list -e some@email.com' and this
   will print out all accounts associated with that email.  All entries will be listed
-  with no arguement provided.
+  with no argument provided.
 
   """;
 
@@ -616,7 +616,7 @@ class ListCommand extends BaseCommand {
       bool verbose = false;
       log.info("running list command with args $args");
       if (containsArgument(args, "--verbose", "-v")) {
-        print("got verbose");
+        log.info("got verbose flag");
         verbose = true;
       }
       List<AccountItem>? items = accounts?.accounts;
@@ -878,6 +878,7 @@ abstract class BaseCommand extends Command {
   }
 
   void setLoggingLevel(String level) {
+    print("setting logging level to $level");
     if (level.toLowerCase() == Level.WARNING.name.toLowerCase()) {
       Logger.root.level = Level.WARNING;
     } else if (level.toLowerCase() == Level.INFO.name.toLowerCase()) {
